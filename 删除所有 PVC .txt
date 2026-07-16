@@ -1,0 +1,13 @@
+# ① 去掉 default 命名空间所有 PVC 的 finalizer（用 merge 设空数组，比 remove 稳）
+for p in $(kubectl get pvc -n default -o jsonpath='{.items[*].metadata.name}'); do kubectl -n default patch pvc $p --type=merge -p '{"metadata":{"finalizers":[]}}'; done
+
+# ② 去掉所有 PV 的 finalizer
+for v in $(kubectl get pv -o jsonpath='{.items[*].metadata.name}'); do kubectl patch pv $v --type=merge -p '{"metadata":{"finalizers":[]}}'; done
+
+# ③ 立即返回式删除（--wait=false 让命令不阻塞终端）
+kubectl delete pvc --all -n default --force --grace-period=0 --wait=false
+kubectl delete pv --all --force --grace-period=0 --wait=false
+
+# ④ 等几秒再确认
+kubectl get pvc -n default
+kubectl get pv
